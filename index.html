@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background-color: #eee;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background-color: #007bff;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+
+      .question {
+        font-size: 1.1em;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .option {
+        padding: 12px 16px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background-color: white;
+      }
+
+      .option:hover {
+        border-color: #007bff;
+        background-color: #f0f7ff;
+      }
+
+      .option.selected {
+        border-color: #007bff;
+        background-color: #e6f2ff;
+      }
+
+      .option.correct {
+        border-color: #28a745;
+        background-color: #d4edda;
+      }
+
+      .option.incorrect {
+        border-color: #dc3545;
+        background-color: #f8d7da;
+      }
+
+      .feedback {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 6px;
+        display: none;
+      }
+
+      .feedback.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .feedback.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .explanation {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #e9ecef;
+        border-radius: 6px;
+        display: none;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .score-display {
+        text-align: right;
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+      <div class="score-display">
+        Score: <span id="score">0</span>/<span id="total">0</span>
+      </div>
+      <div class="question"></div>
+      <div class="options"></div>
+
+      <div class="button-group">
+        <button id="checkAnswer" disabled>Check Answer</button>
+        <button id="nextQuestion" style="display: none">Next Question</button>
+      </div>
+
+      <div class="feedback"></div>
+      <div class="explanation"></div>
+    </div>
+
+    <script>
+      const questions = [
+        {
+          question:
+            "Sarah is saving money for a new bicycle. After spending three-fifths (3/5) of her savings on school supplies, she has $24 remaining. How much money did Sarah have initially?",
+          options: [
+            { text: "A) $60", value: 60 },
+            { text: "B) $40", value: 40 },
+            { text: "C) $45", value: 45 },
+            { text: "D) $50", value: 50 },
+          ],
+          correctAnswer: 60,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <p>Let's solve this step by step:</p>
+                    <ol>
+                        <li>If 3/5 of the money was spent, then 2/5 remains</li>
+                        <li>The remaining amount (2/5) equals $24</li>
+                        <li>If 2/5 = $24, then 1/5 = $12</li>
+                        <li>Therefore, the total amount (5/5) = $12 × 5 = $60</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "In a class, two-thirds (2/3) of the students are wearing blue shirts. If 12 students are not wearing blue shirts, how many students are in the class?",
+          options: [
+            { text: "A) 24", value: 24 },
+            { text: "B) 36", value: 36 },
+            { text: "C) 48", value: 48 },
+            { text: "D) 32", value: 32 },
+          ],
+          correctAnswer: 36,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <p>Let's solve this step by step:</p>
+                    <ol>
+                        <li>If 2/3 are wearing blue shirts, then 1/3 are not</li>
+                        <li>We know that 1/3 (not wearing blue) = 12 students</li>
+                        <li>If 1/3 = 12, then the total (3/3) = 12 × 3 = 36</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "A recipe requires three-quarters (3/4) of a cup of sugar. If you want to make 1/3 of the recipe, how much sugar do you need?",
+          options: [
+            { text: "A) 1/4 cup", value: 0.25 },
+            { text: "B) 1/3 cup", value: 0.33 },
+            { text: "C) 1/2 cup", value: 0.5 },
+            { text: "D) 1/8 cup", value: 0.125 },
+          ],
+          correctAnswer: 0.25,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <p>Let's solve this step by step:</p>
+                    <ol>
+                        <li>Original recipe needs 3/4 cup of sugar</li>
+                        <li>We want 1/3 of the recipe</li>
+                        <li>To find 1/3 of 3/4: multiply 3/4 × 1/3</li>
+                        <li>3/4 × 1/3 = 3/12 = 1/4 cup</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "A garden plot is 5/6 planted with vegetables. If the remaining unplanted area is 30 square feet, what is the total size of the garden plot?",
+          options: [
+            { text: "A) 150 square feet", value: 150 },
+            { text: "B) 180 square feet", value: 180 },
+            { text: "C) 200 square feet", value: 200 },
+            { text: "D) 160 square feet", value: 160 },
+          ],
+          correctAnswer: 180,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <ol>
+                        <li>If 5/6 is planted, then 1/6 is unplanted</li>
+                        <li>The unplanted area (1/6) is 30 square feet</li>
+                        <li>If 1/6 = 30, then total area = 30 × 6 = 180 square feet</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "In a library, 2/5 of the books are fiction. If there are 300 non-fiction books, how many total books are in the library?",
+          options: [
+            { text: "A) 400", value: 400 },
+            { text: "B) 450", value: 450 },
+            { text: "C) 500", value: 500 },
+            { text: "D) 550", value: 550 },
+          ],
+          correctAnswer: 500,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <ol>
+                        <li>If 2/5 are fiction, then 3/5 are non-fiction</li>
+                        <li>We know 3/5 (non-fiction) = 300 books</li>
+                        <li>If 3/5 = 300, then 1/5 = 100</li>
+                        <li>Total books (5/5) = 100 × 5 = 500</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "John spent 1/4 of his monthly salary on rent and 1/3 of the remainder on food. If he spent $400 on food, what was his original monthly salary?",
+          options: [
+            { text: "A) $1,600", value: 1600 },
+            { text: "B) $1,800", value: 1800 },
+            { text: "C) $2,000", value: 2000 },
+            { text: "D) $2,400", value: 2400 },
+          ],
+          correctAnswer: 1600,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <ol>
+                        <li>After rent (1/4), 3/4 of salary remains</li>
+                        <li>1/3 of 3/4 spent on food = $400</li>
+                        <li>1/3 of 3/4 = 1/4 of total</li>
+                        <li>If 1/4 = $400, total = $400 × 4 = $1,600</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "In a bag of marbles, 3/8 are red and 2/5 of the remainder are blue. If there are 15 blue marbles, how many marbles are in the bag?",
+          options: [
+            { text: "A) 60", value: 60 },
+            { text: "B) 75", value: 75 },
+            { text: "C) 80", value: 80 },
+            { text: "D) 100", value: 100 },
+          ],
+          correctAnswer: 60,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <ol>
+                        <li>3/8 are red, so 5/8 remain</li>
+                        <li>2/5 of 5/8 (blue) = 2/8 of total</li>
+                        <li>If 2/8 = 15 marbles</li>
+                        <li>Total marbles = 15 × 4 = 60</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "A painter has completed 5/6 of a mural. If it took 25 hours to complete this portion, how many total hours will the entire mural take?",
+          options: [
+            { text: "A) 28 hours", value: 28 },
+            { text: "B) 29 hours", value: 29 },
+            { text: "C) 30 hours", value: 30 },
+            { text: "D) 32 hours", value: 32 },
+          ],
+          correctAnswer: 30,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <ol>
+                        <li>5/6 of the mural took 25 hours</li>
+                        <li>If 5/6 = 25 hours, then 1/6 = 5 hours</li>
+                        <li>Total time (6/6) = 5 × 6 = 30 hours</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "At a school fair, 2/3 of the students bought tickets. Of those who bought tickets, 3/4 played games. If 150 students played games, how many students are there in total?",
+          options: [
+            { text: "A) 300", value: 300 },
+            { text: "B) 400", value: 400 },
+            { text: "C) 250", value: 250 },
+            { text: "D) 350", value: 350 },
+          ],
+          correctAnswer: 300,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <ol>
+                        <li>3/4 of 2/3 played games</li>
+                        <li>(3/4 × 2/3) = 1/2 of total students</li>
+                        <li>If 1/2 = 150 students</li>
+                        <li>Total students = 150 × 2 = 300</li>
+                    </ol>
+                `,
+        },
+        {
+          question:
+            "In a test, 7/8 of the students passed. If 6 students failed, how many students took the test?",
+          options: [
+            { text: "A) 42", value: 42 },
+            { text: "B) 48", value: 48 },
+            { text: "C) 54", value: 54 },
+            { text: "D) 60", value: 60 },
+          ],
+          correctAnswer: 48,
+          explanation: `
+                    <h3>Solution Explanation:</h3>
+                    <ol>
+                        <li>If 7/8 passed, then 1/8 failed</li>
+                        <li>We know 1/8 (failed) = 6 students</li>
+                        <li>If 1/8 = 6, then total = 6 × 8 = 48 students</li>
+                    </ol>
+                `,
+        },
+      ];
+
+      let currentQuestion = 0;
+      let score = 0;
+      let selectedOption = null;
+
+      const questionDiv = document.querySelector(".question");
+      const optionsDiv = document.querySelector(".options");
+      const checkButton = document.getElementById("checkAnswer");
+      const nextButton = document.getElementById("nextQuestion");
+      const feedbackDiv = document.querySelector(".feedback");
+      const explanationDiv = document.querySelector(".explanation");
+      const progressFill = document.querySelector(".progress-fill");
+      const scoreDisplay = document.getElementById("score");
+      const totalDisplay = document.getElementById("total");
+
+      function displayQuestion(index) {
+        const question = questions[index];
+        questionDiv.textContent = question.question;
+        optionsDiv.innerHTML = "";
+
+        question.options.forEach((option) => {
+          const div = document.createElement("div");
+          div.className = "option";
+          div.textContent = option.text;
+          div.dataset.value = option.value;
+          optionsDiv.appendChild(div);
+        });
+
+        // Reset state
+        selectedOption = null;
+        checkButton.disabled = true;
+        nextButton.style.display = "none";
+        feedbackDiv.style.display = "none";
+        explanationDiv.style.display = "none";
+
+        // Update progress
+        progressFill.style.width = `${((index + 1) / questions.length) * 100}%`;
+        scoreDisplay.textContent = score;
+        totalDisplay.textContent = questions.length;
+      }
+
+      optionsDiv.addEventListener("click", (e) => {
+        if (e.target.classList.contains("option")) {
+          // Remove selected class from all options
+          optionsDiv
+            .querySelectorAll(".option")
+            .forEach((opt) => opt.classList.remove("selected"));
+
+          // Add selected class to clicked option
+          e.target.classList.add("selected");
+          selectedOption = e.target;
+          checkButton.disabled = false;
+        }
+      });
+
+      checkButton.addEventListener("click", () => {
+        const selectedValue = parseFloat(selectedOption.dataset.value);
+        const correctAnswer = questions[currentQuestion].correctAnswer;
+
+        // Remove any previous feedback classes
+        optionsDiv.querySelectorAll(".option").forEach((opt) => {
+          opt.classList.remove("correct", "incorrect");
+        });
+
+        if (selectedValue === correctAnswer) {
+          feedbackDiv.className = "feedback success";
+          feedbackDiv.textContent = "Correct! Well done!";
+          selectedOption.classList.add("correct");
+          score++;
+          scoreDisplay.textContent = score;
+        } else {
+          feedbackDiv.className = "feedback error";
+          feedbackDiv.textContent = "Incorrect. Try again!";
+          selectedOption.classList.add("incorrect");
+          // Show the correct answer
+          optionsDiv.querySelectorAll(".option").forEach((opt) => {
+            if (parseFloat(opt.dataset.value) === correctAnswer) {
+              opt.classList.add("correct");
+            }
+          });
+        }
+
+        feedbackDiv.style.display = "block";
+        explanationDiv.style.display = "block";
+        explanationDiv.innerHTML = questions[currentQuestion].explanation;
+        checkButton.disabled = true;
+
+        if (currentQuestion < questions.length - 1) {
+          nextButton.style.display = "block";
+        } else {
+          nextButton.style.display = "block";
+          nextButton.textContent = "See Final Score";
+        }
+      });
+
+      nextButton.addEventListener("click", () => {
+        if (currentQuestion < questions.length - 1) {
+          currentQuestion++;
+          displayQuestion(currentQuestion);
+        } else {
+          // Show final score
+          questionDiv.innerHTML = `
+                    <h2>Quiz Complete!</h2>
+                    <p>Your final score: ${score}/${questions.length}</p>
+                    <p>Percentage: ${Math.round(
+                      (score / questions.length) * 100
+                    )}%</p>
+                `;
+          optionsDiv.innerHTML = "";
+          checkButton.style.display = "none";
+          nextButton.style.display = "none";
+          feedbackDiv.style.display = "none";
+          explanationDiv.style.display = "none";
+        }
+      });
+
+      // Initialize first question
+      displayQuestion(0);
+    </script>
+  </body>
+</html>
